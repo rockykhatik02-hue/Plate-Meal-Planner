@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plate — Your Weekly Menu, Planned</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F0E8;
+    --ink:#1F2421;
+    --sage:#7A9B76;
+    --gold:#E8B04B;
+    --card:#FFFFFF;
+    --line:#DCD4C5;
+    --muted:#8A8378;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Inter', sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    line-height:1.5;
+  }
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:48px 24px 80px;
+  }
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:24px;
+    margin-bottom:40px;
+    gap:24px;
+    flex-wrap:wrap;
+  }
+  .logo{
+    font-family:'Fraunces', serif;
+    font-size:clamp(2.4rem, 5vw, 3.6rem);
+    font-weight:600;
+    letter-spacing:-0.02em;
+  }
+  .logo span{ color:var(--sage); font-style:italic; }
+  .tagline{
+    font-size:0.95rem;
+    color:var(--muted);
+    max-width:320px;
+    text-align:right;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:380px 1fr;
+    gap:32px;
+  }
+  @media (max-width:900px){
+    .grid{ grid-template-columns:1fr; }
+  }
+
+  /* FORM CARD - index card style */
+  .index-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:32px;
+    position:relative;
+    height:fit-content;
+  }
+  .index-card::before{
+    content:'';
+    position:absolute;
+    left:0; top:64px;
+    width:100%;
+    height:1px;
+    background:var(--line);
+  }
+  .index-card::after{
+    content:'';
+    position:absolute;
+    left:48px; top:0;
+    width:1px;
+    height:100%;
+    background:#F0DDB8;
+    opacity:0.6;
+  }
+  .card-eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--sage);
+    font-weight:700;
+    margin-bottom:6px;
+    display:block;
+  }
+  .card-title{
+    font-family:'Fraunces', serif;
+    font-size:1.6rem;
+    font-weight:600;
+    margin-bottom:28px;
+  }
+  .field{ margin-bottom:20px; }
+  .field label{
+    display:block;
+    font-size:0.82rem;
+    font-weight:600;
+    margin-bottom:6px;
+    color:var(--ink);
+  }
+  .field-hint{
+    font-size:0.75rem;
+    color:var(--muted);
+    margin-top:4px;
+  }
+  select, input, textarea{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    font-size:0.92rem;
+    transition:border-color 0.15s;
+  }
+  select:focus, input:focus, textarea:focus{
+    outline:none;
+    border-color:var(--sage);
+    box-shadow:0 0 0 3px rgba(122,155,118,0.15);
+  }
+  textarea{ resize:vertical; min-height:70px; }
+  .row-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .generate-btn{
+    width:100%;
+    margin-top:8px;
+    padding:15px;
+    background:var(--ink);
+    color:var(--bg);
+    border:none;
+    border-radius:3px;
+    font-family:'Inter', sans-serif;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.15s;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .generate-btn:hover{ background:var(--sage); }
+  .generate-btn:disabled{ opacity:0.6; cursor:not-allowed; }
+
+  .spinner{
+    width:14px; height:14px;
+    border:2px solid rgba(245,240,232,0.3);
+    border-top-color:var(--bg);
+    border-radius:50%;
+    animation:spin 0.7s linear infinite;
+    display:none;
+  }
+  .generate-btn.loading .spinner{ display:inline-block; }
+  .generate-btn.loading .btn-label{ opacity:0.7; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* RESULTS PANE */
+  .results{ min-height:400px; }
+  .empty-state{
+    height:400px;
+    border:1px dashed var(--line);
+    border-radius:4px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:var(--muted);
+    padding:40px;
+  }
+  .empty-state .ticket-icon{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.75rem;
+    border:1px solid var(--line);
+    padding:8px 14px;
+    border-radius:3px;
+    margin-bottom:16px;
+    letter-spacing:0.1em;
+  }
+  .empty-state h3{
+    font-family:'Fraunces', serif;
+    font-size:1.3rem;
+    color:var(--ink);
+    margin-bottom:8px;
+    font-weight:600;
+  }
+  .error-box{
+    background:#FCEEEA;
+    border:1px solid #E0A294;
+    color:#A8412E;
+    padding:16px 20px;
+    border-radius:4px;
+    font-size:0.9rem;
+    margin-bottom:20px;
+  }
+
+  /* MACRO TICKET - signature element */
+  .ticket{
+    background:var(--ink);
+    color:var(--bg);
+    border-radius:4px;
+    padding:24px 28px;
+    margin-bottom:28px;
+    position:relative;
+    overflow:hidden;
+  }
+  .ticket::before{
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height:6px;
+    background:repeating-linear-gradient(90deg, var(--gold) 0 10px, transparent 10px 20px);
+  }
+  .ticket-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:18px;
+    padding-top:6px;
+  }
+  .ticket-head .label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    text-transform:uppercase;
+    letter-spacing:0.15em;
+    color:var(--gold);
+  }
+  .ticket-head .plan-name{
+    font-family:'Fraunces', serif;
+    font-size:1.5rem;
+    font-weight:600;
+  }
+  .macro-row{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:16px;
+  }
+  .macro-stat{
+    font-family:'JetBrains Mono', monospace;
+  }
+  .macro-stat .num{
+    font-size:1.8rem;
+    font-weight:700;
+    line-height:1;
+    display:block;
+  }
+  .macro-stat .lbl{
+    font-size:0.68rem;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:#B5B0A6;
+    margin-top:4px;
+    display:block;
+  }
+  @media (max-width:520px){
+    .macro-row{ grid-template-columns:repeat(2,1fr); gap:14px; }
+  }
+
+  /* DAY CARDS */
+  .day-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    margin-bottom:16px;
+    overflow:hidden;
+  }
+  .day-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:16px 20px;
+    border-bottom:1px solid var(--line);
+    background:#FBF8F3;
+    cursor:pointer;
+  }
+  .day-head .day-name{
+    font-family:'Fraunces', serif;
+    font-size:1.15rem;
+    font-weight:600;
+  }
+  .day-head .day-cals{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    color:var(--muted);
+  }
+  .day-body{ padding:18px 20px; display:grid; gap:14px; }
+  .meal-row{
+    display:grid;
+    grid-template-columns:90px 1fr auto;
+    gap:14px;
+    align-items:start;
+    padding-bottom:14px;
+    border-bottom:1px solid var(--line);
+  }
+  .meal-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .meal-type{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--sage);
+    font-weight:700;
+    padding-top:2px;
+  }
+  .meal-desc .meal-title{ font-weight:600; margin-bottom:3px; font-size:0.95rem; }
+  .meal-desc .meal-detail{ font-size:0.85rem; color:var(--muted); }
+  .meal-macros{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.75rem;
+    color:var(--muted);
+    text-align:right;
+    white-space:nowrap;
+  }
+
+  /* GROCERY LIST */
+  .grocery-section{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:24px 28px;
+    margin-top:8px;
+  }
+  .grocery-section h3{
+    font-family:'Fraunces', serif;
+    font-size:1.3rem;
+    font-weight:600;
+    margin-bottom:18px;
+    padding-bottom:14px;
+    border-bottom:2px solid var(--ink);
+  }
+  .grocery-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:24px;
+  }
+  @media (max-width:600px){ .grocery-grid{ grid-template-columns:1fr; } }
+  .grocery-cat h4{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--sage);
+    margin-bottom:10px;
+  }
+  .grocery-cat ul{ list-style:none; }
+  .grocery-cat li{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    font-size:0.9rem;
+    padding:6px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .grocery-cat li:last-child{ border-bottom:none; }
+  .check{
+    width:15px; height:15px;
+    border:1.5px solid var(--line);
+    border-radius:2px;
+    flex-shrink:0;
+    margin-top:2px;
+    cursor:pointer;
+    transition:all 0.15s;
+  }
+  .check.checked{
+    background:var(--sage);
+    border-color:var(--sage);
+  }
+  .grocery-item-text.checked{
+    text-decoration:line-through;
+    color:var(--muted);
+  }
+
+  footer{
+    margin-top:60px;
+    padding-top:24px;
+    border-top:1px solid var(--line);
+    font-size:0.78rem;
+    color:var(--muted);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">Plate<span>.</span></div>
+    <div class="tagline">A weekly menu and grocery list, built around your goals, budget, and what's actually in season near you.</div>
+  </header>
+
+  <div class="grid">
+
+    <!-- FORM -->
+    <div class="index-card">
+      <span class="card-eyebrow">Order Ticket</span>
+      <div class="card-title">Tell us what you're working with</div>
+
+      <div class="field">
+        <label for="goal">Main goal</label>
+        <select id="goal">
+          <option value="lose weight">Lose weight</option>
+          <option value="build muscle / gain weight">Build muscle / gain weight</option>
+          <option value="maintain weight, eat healthier">Maintain weight, eat healthier</option>
+          <option value="general energy and wellbeing">General energy and wellbeing</option>
+        </select>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="people">People eating</label>
+          <input type="number" id="people" min="1" max="10" value="2">
+        </div>
+        <div class="field">
+          <label for="budget">Weekly budget</label>
+          <input type="text" id="budget" placeholder="e.g. $80 or 6000 INR">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="cuisine">Cuisine preference</label>
+        <input type="text" id="cuisine" placeholder="e.g. Indian, Mediterranean, anything">
+      </div>
+
+      <div class="field">
+        <label for="allergies">Allergies / restrictions</label>
+        <input type="text" id="allergies" placeholder="e.g. nut allergy, vegetarian, no dairy">
+        <div class="field-hint">Leave blank if none.</div>
+      </div>
+
+      <div class="field">
+        <label for="notes">Anything else?</label>
+        <textarea id="notes" placeholder="e.g. quick meals on weekdays, love spicy food, no eggs for breakfast"></textarea>
+      </div>
+
+      <button class="generate-btn" id="generateBtn">
+        <span class="spinner"></span>
+        <span class="btn-label">Build my weekly plan</span>
+      </button>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results" id="results">
+      <div class="empty-state">
+        <div class="ticket-icon">NO. 000 · AWAITING ORDER</div>
+        <h3>Your menu board is empty</h3>
+        <p>Fill in your details and generate a full week of meals, macros, and a categorized grocery list.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Plate — generated meal plans are suggestions, not medical advice. Consult a professional for specific dietary needs.</footer>
+</div>
+
+<script>
+const generateBtn = document.getElementById('generateBtn');
+const resultsEl = document.getElementById('results');
+
+generateBtn.addEventListener('click', async () => {
+  const goal = document.getElementById('goal').value;
+  const people = document.getElementById('people').value;
+  const budget = document.getElementById('budget').value || 'not specified';
+  const cuisine = document.getElementById('cuisine').value || 'no preference';
+  const allergies = document.getElementById('allergies').value || 'none';
+  const notes = document.getElementById('notes').value || 'none';
+
+  generateBtn.classList.add('loading');
+  generateBtn.disabled = true;
+
+  const prompt = `Create a 7-day meal plan as JSON only, no markdown fences, no preamble. Use this exact structure:
+{
+  "plan_name": "short catchy name for this plan",
+  "daily_calories": number,
+  "daily_protein_g": number,
+  "daily_carbs_g": number,
+  "daily_fat_g": number,
+  "days": [
+    {
+      "day": "Monday",
+      "total_calories": number,
+      "meals": [
+        {"type": "Breakfast", "title": "short name", "detail": "1 sentence description", "calories": number, "protein_g": number}
+      ]
+    }
+  ],
+  "grocery_list": [
+    {"category": "Produce", "items": ["item 1", "item 2"]},
+    {"category": "Proteins", "items": []},
+    {"category": "Pantry", "items": []},
+    {"category": "Dairy & Alternatives", "items": []}
+  ]
+}
+
+User details:
+- Goal: ${goal}
+- People: ${people}
+- Weekly budget: ${budget}
+- Cuisine preference: ${cuisine}
+- Allergies/restrictions: ${allergies}
+- Additional notes: ${notes}
+
+Make each day have Breakfast, Lunch, Dinner, and one Snack. Keep meals realistic, varied across the week, and appropriate to the cuisine and budget. Quantities in grocery list should cover the full week for the stated number of people. Respond with ONLY the JSON object.`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 4000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    let text = data.content.map(b => b.text || "").join("");
+    text = text.replace(/```json|```/g, "").trim();
+    const plan = JSON.parse(text);
+
+    renderPlan(plan);
+  } catch (err) {
+    resultsEl.innerHTML = `<div class="error-box">Something went wrong building your plan: ${err.message}. Please try again.</div>` + resultsEl.innerHTML;
+  } finally {
+    generateBtn.classList.remove('loading');
+    generateBtn.disabled = false;
+  }
+});
+
+function renderPlan(plan){
+  let html = '';
+
+  // Macro ticket
+  html += `
+    <div class="ticket">
+      <div class="ticket-head">
+        <div>
+          <span class="label">No. ${Math.floor(Math.random()*900+100)} · Weekly Plan</span><br>
+          <span class="plan-name">${escapeHtml(plan.plan_name || 'Your Plan')}</span>
+        </div>
+      </div>
+      <div class="macro-row">
+        <div class="macro-stat"><span class="num">${plan.daily_calories ?? '—'}</span><span class="lbl">kcal / day</span></div>
+        <div class="macro-stat"><span class="num">${plan.daily_protein_g ?? '—'}g</span><span class="lbl">protein</span></div>
+        <div class="macro-stat"><span class="num">${plan.daily_carbs_g ?? '—'}g</span><span class="lbl">carbs</span></div>
+        <div class="macro-stat"><span class="num">${plan.daily_fat_g ?? '—'}g</span><span class="lbl">fat</span></div>
+      </div>
+    </div>
+  `;
+
+  // Days
+  (plan.days || []).forEach(day => {
+    html += `<div class="day-card">
+      <div class="day-head">
+        <span class="day-name">${escapeHtml(day.day)}</span>
+        <span class="day-cals">${day.total_calories ?? ''} kcal</span>
+      </div>
+      <div class="day-body">`;
+    (day.meals || []).forEach(meal => {
+      html += `
+        <div class="meal-row">
+          <div class="meal-type">${escapeHtml(meal.type)}</div>
+          <div class="meal-desc">
+            <div class="meal-title">${escapeHtml(meal.title)}</div>
+            <div class="meal-detail">${escapeHtml(meal.detail || '')}</div>
+          </div>
+          <div class="meal-macros">${meal.calories ?? ''} kcal<br>${meal.protein_g ?? ''}g protein</div>
+        </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  // Grocery list
+  html += `<div class="grocery-section"><h3>Grocery List</h3><div class="grocery-grid">`;
+  (plan.grocery_list || []).forEach(cat => {
+    html += `<div class="grocery-cat"><h4>${escapeHtml(cat.category)}</h4><ul>`;
+    (cat.items || []).forEach((item, i) => {
+      html += `<li><span class="check" onclick="toggleCheck(this)"></span><span class="grocery-item-text">${escapeHtml(item)}</span></li>`;
+    });
+    html += `</ul></div>`;
+  });
+  html += `</div></div>`;
+
+  resultsEl.innerHTML = html;
+}
+
+function toggleCheck(el){
+  el.classList.toggle('checked');
+  el.nextElementSibling.classList.toggle('checked');
+}
+
+function escapeHtml(str){
+  if (str === undefined || str === null) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
